@@ -1,0 +1,12 @@
+
+
+
+twilio
+python-dotenv
+vosk
+uvicorn[standard]
+python-multipart
+
+# Autogen
+autogen-agentchat
+autogen-ext[openai,web-surfer]

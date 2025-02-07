@@ -10,12 +10,13 @@ import time
 import re
 
 class WhisperTranscriptionService:
-    def __init__(self, model_name: str = 'base.en',
+    def __init__(self, model_name: str = 'large-v3-turbo',
+                 models_dir: str = './models/whisper',
                  silence_duration: float = 1.0,  # Duration of silence to trigger processing (in seconds)
                  sample_rate: int = 16000,
                  max_buffer_duration: float = 30.0):  # Maximum buffer size in seconds
         self.logger = configure_logger('whisper_transcription_service_logger', logging.INFO)
-        self.whisper_model = Model(model_name)
+        self.whisper_model = Model(model=model_name, models_dir=models_dir)
         self.sample_rate = sample_rate
         self.silence_duration = silence_duration
         self.max_buffer_size = int(max_buffer_duration * sample_rate)
