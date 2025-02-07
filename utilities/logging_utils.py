@@ -22,7 +22,7 @@ def configure_logger(name: str, level: int = logging.INFO) -> logging.Logger:
     console_handler.setLevel(level)
 
     # Define a log format that includes date, time, log level, and message
-    log_format = '%(asctime)s - %(levelname)s - %(message)s'
+    log_format = '%(asctime)s - %(levelname)s - [%(filename)s:%(lineno)d] - %(name)s - %(funcName)s() - %(message)s'
     date_format = '%Y-%m-%d %H:%M:%S'
     formatter = logging.Formatter(fmt=log_format, datefmt=date_format)
     console_handler.setFormatter(formatter)
