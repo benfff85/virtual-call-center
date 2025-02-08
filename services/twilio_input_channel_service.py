@@ -1,4 +1,5 @@
 import json
+import os
 import time
 import logging
 from fastapi import FastAPI, WebSocket, Request, Response
@@ -20,7 +21,7 @@ async def answer_call(request: Request):
     await log_request(request)
     response = VoiceResponse()
     start = Start()
-    start.stream(url="wss://promptly-alert-sparrow.ngrok-free.app/ws", name="MyAudioStream")
+    start.stream(url=f"wss://{os.getenv('NGROK_DOMAIN')}/ws", name="MyAudioStream")
     response.append(start)
     response.say("Speak, and I'll repeat your words.", language="en-US", voice="woman")
     response.redirect(url="/call-keepalive", method="POST")
