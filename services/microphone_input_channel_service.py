@@ -1,3 +1,5 @@
+# services/microphone_input_channel_service.py
+
 import sounddevice as sd
 import numpy as np
 import base64
@@ -5,7 +7,6 @@ import logging
 import threading
 import time
 import audioop
-from typing import Optional
 from queue import Queue
 from utilities.logging_utils import configure_logger
 
@@ -16,14 +17,8 @@ class MicrophoneInputChannelService:
                  chunk_duration: float = 0.128):
         """
         Initialize the microphone input channel service.
-
-        Args:
-            transcription_service: Instance of WhisperTranscriptionService
-            sample_rate: Audio sample rate (default 8000 Hz)
-            chunk_duration: How many seconds of audio to process at once
         """
         self.logger = configure_logger('micro', logging.INFO)
-
         self.sample_rate = sample_rate
         self.chunk_duration = chunk_duration
         self.chunk_size = int(sample_rate * chunk_duration)
@@ -46,48 +41,40 @@ class MicrophoneInputChannelService:
 
         if self.stream_initialized:
             try:
-                # Convert float32 to int16 PCM
-                # indata = (indata.flatten() * 32767).astype(np.int16)  # Convert float32 to int16 PCM with clipping
-                indata = np.clip(indata, -1.0, 1.0)  # Add this line to prevent overflow
+                # Prevent overflow and convert to int16 PCM
+                indata = np.clip(indata, -1.0, 1.0)
                 audio_pcm = (indata.flatten() * 32767).astype(np.int16)
-
-                # Convert to bytes
                 audio_bytes = audio_pcm.tobytes()
 
-                # Convert to u-law
-                audio_ulaw = audioop.lin2ulaw(audio_bytes, 2)  # 2 bytes per sample
+                # Convert to u-law (2 bytes per sample)
+                audio_ulaw = audioop.lin2ulaw(audio_bytes, 2)
 
                 # Encode to base64
                 encoded = base64.b64encode(audio_ulaw).decode('utf-8')
 
-                # Add to processing queue
-                self.logger.info(f"Adding audio data to queue encoded length: {len(encoded)}")
+                self.logger.info(f"Adding audio data to queue, encoded length: {len(encoded)}")
                 self.audio_queue.put(encoded)
-
             except Exception as e:
                 self.logger.error(f"Error in audio callback: {str(e)}")
 
     def _process_audio_queue(self):
-        """Process audio data from the queue continuously."""
+        """Continuously process audio data from the queue."""
         self.logger.info("Audio processing thread started")
-
         while self.is_recording:
             try:
-                # Get audio data from queue with timeout
                 audio_data = self.audio_queue.get(timeout=1.0)
-                self.logger.info(f"process_audio_queue: audio_data length: {len(audio_data)}")
+                self.logger.info(f"Processing audio data, length: {len(audio_data)}")
 
-                # Send to transcription service
+                # Process the audio (e.g., transcribe it)
                 text = self.transcription_service.process_audio(audio_data)
                 if text:
                     self.logger.info(f"Transcribed: {text}")
-
             except Exception as e:
                 if self.is_recording:
                     self.logger.error(f"Error processing audio: {str(e)}")
 
     def start_recording(self):
-        """Start recording from the microphone."""
+        """Start recording audio from the microphone."""
         if self.is_recording:
             self.logger.warning("Already recording")
             return
@@ -96,17 +83,16 @@ class MicrophoneInputChannelService:
             self.is_recording = True
             self.stream_initialized = True
 
-            # Corrected samplerate and blocksize
             self.stream = sd.InputStream(
-                samplerate=self.sample_rate,  # Use configured sample rate (8000)
+                samplerate=self.sample_rate,
                 channels=1,
                 callback=self._audio_callback,
-                blocksize=int(self.sample_rate * self.chunk_duration),  # Correct blocksize
+                blocksize=int(self.sample_rate * self.chunk_duration),
                 dtype=np.float32
             )
             self.stream.start()
 
-            # Start the processing thread
+            # Start a separate thread to process audio data from the queue
             self.processing_thread = threading.Thread(
                 target=self._process_audio_queue,
                 daemon=True
@@ -114,7 +100,6 @@ class MicrophoneInputChannelService:
             self.processing_thread.start()
 
             self.logger.info("Recording started")
-
         except Exception as e:
             self.is_recording = False
             self.stream_initialized = False
@@ -122,7 +107,7 @@ class MicrophoneInputChannelService:
             raise
 
     def stop_recording(self):
-        """Stop recording from the microphone."""
+        """Stop recording audio from the microphone."""
         if not self.is_recording:
             return
 
@@ -133,12 +118,33 @@ class MicrophoneInputChannelService:
             self.stream.stop()
             self.stream.close()
 
-        # Wait for processing thread to finish
         if self.processing_thread and self.processing_thread.is_alive():
             self.processing_thread.join(timeout=2.0)
 
         self.logger.info("Recording stopped")
 
     def __del__(self):
-        """Cleanup when the object is destroyed."""
+        """Cleanup resources on object deletion."""
         self.stop_recording()
+
+
+def run_microphone_mode():
+    """Runs the microphone input channel service in standalone mode."""
+    import time
+    from services.whisper_transcription_service import WhisperTranscriptionService
+
+    logger = configure_logger('microphone_main', logging.INFO)
+    logger.info("Starting microphone input channel service in standalone mode.")
+
+    transcription_service = WhisperTranscriptionService(silence_duration=1.0)
+    recorder = MicrophoneInputChannelService(transcription_service)
+    recorder.start_recording()
+    try:
+        logger.info("Recording from microphone... Press Ctrl+C to stop.")
+        while True:
+            time.sleep(0.1)
+    except KeyboardInterrupt:
+        logger.info("KeyboardInterrupt received. Stopping microphone recording...")
+    finally:
+        recorder.stop_recording()
+        logger.info("Microphone recording stopped.")
