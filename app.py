@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-AUDIO_INPUT_CHANNEL = os.getenv("AUDIO_INPUT_CHANNEL", "twilio").lower()
+AUDIO_INPUT_CHANNEL = os.getenv("AUDIO_INPUT_CHANNEL", "microphone").lower()
 
 if AUDIO_INPUT_CHANNEL == "microphone":
     # Import and explicitly run the microphone mode
