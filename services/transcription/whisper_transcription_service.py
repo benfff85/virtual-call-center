@@ -1,3 +1,4 @@
+from services.transcription.transcription_service import TranscriptionService
 from utilities.logging_utils import configure_logger
 import base64
 import audioop
@@ -7,9 +8,8 @@ from pywhispercpp.model import Model
 from collections import deque
 from typing import Optional
 import time
-import re
 
-class WhisperTranscriptionService:
+class WhisperTranscriptionService(TranscriptionService):
     def __init__(self, model_name: str = 'large-v3-turbo',
                  models_dir: str = './models/whisper',
                  silence_duration: float = 1.0,  # Duration of silence to trigger processing (in seconds)
