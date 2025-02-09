@@ -16,7 +16,6 @@ from utilities.logging_utils import configure_logger
 
 class MicrophoneInputChannelService:
     def __init__(self,
-                 transcription_service,
                  sample_rate: int = 8000,
                  chunk_duration: float = 0.128):
         """
@@ -26,7 +25,6 @@ class MicrophoneInputChannelService:
         self.sample_rate = sample_rate
         self.chunk_duration = chunk_duration
         self.chunk_size = int(sample_rate * chunk_duration)
-        self.transcription_service = transcription_service
 
         # Stream control
         self.is_recording = False
@@ -141,13 +139,9 @@ class MicrophoneInputChannelService:
 def run_microphone_mode():
     """Runs the microphone input channel service in standalone mode."""
     import time
-    from services.transcription.whisper_transcription_service import WhisperTranscriptionService
-
     logger = configure_logger('microphone_main', logging.INFO)
     logger.info("Starting microphone input channel service in standalone mode.")
-
-    transcription_service = WhisperTranscriptionService(silence_duration=1.0)
-    recorder = MicrophoneInputChannelService(transcription_service)
+    recorder = MicrophoneInputChannelService()
     recorder.start_recording()
     try:
         logger.info("Recording from microphone... Press Ctrl+C to stop.")
