@@ -8,6 +8,7 @@ import threading
 import audioop
 from queue import Queue
 from schemas.audio_data import AudioData
+from schemas.conversation_input_channel_type import ConversationInputChannelType
 
 from schemas.conversation_segment import ConversationSegment
 from services.conversation_segment_processor_service import process_conversation_segment
@@ -71,6 +72,7 @@ class MicrophoneInputChannelService:
                 # Instantiate a ConversationSegment object
                 conversation_segment = ConversationSegment(
                     call_id=self.call_id,
+                    input_audio_channel=ConversationInputChannelType.LAPTOP_MICROPHONE,
                     customer_audio=AudioData(raw_audio=audio_data, format="ULAW", frequency=8000, channels=1, bit_depth=16),
                     callback=lambda specialist_text: self.logger.info(f"Transcribed customer audio: {specialist_text}")
                 )
@@ -139,7 +141,7 @@ class MicrophoneInputChannelService:
 def run_microphone_mode():
     """Runs the microphone input channel service in standalone mode."""
     import time
-    from services.whisper_transcription_service import WhisperTranscriptionService
+    from services.transcription.whisper_transcription_service import WhisperTranscriptionService
 
     logger = configure_logger('microphone_main', logging.INFO)
     logger.info("Starting microphone input channel service in standalone mode.")

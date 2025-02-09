@@ -1,6 +1,6 @@
 from schemas.conversation_segment import ConversationSegment
 from services import kokoro_tts_service
-from services.whisper_transcription_service import WhisperTranscriptionService
+from services.transcription.whisper_transcription_service import WhisperTranscriptionService
 from utilities.logging_utils import configure_logger
 import logging
 

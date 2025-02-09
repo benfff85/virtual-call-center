@@ -7,7 +7,7 @@ from twilio.twiml.voice_response import VoiceResponse, Start
 
 from utilities.logging_utils import configure_logger
 from utilities.fastapi_utils import log_request
-from services.whisper_transcription_service import WhisperTranscriptionService
+from services.transcription.whisper_transcription_service import WhisperTranscriptionService
 from clients.twilio_rest_client import speak_on_call
 
 logger = configure_logger('twilio_input_channel_service_logger', logging.INFO)
