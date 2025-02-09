@@ -12,10 +12,14 @@ def process_conversation_segment(conversation_segment: ConversationSegment):
 
     # TODO convert audio format if needed
 
+    # Transcribe audio
     conversation_segment.customer_text = transcription_service.process_audio(conversation_segment.customer_audio.raw_audio)
-    if conversation_segment.customer_text:
 
-        conversation_segment.specialist_text = conversation_segment.customer_text
-        # TODO feed to LLM
-        kokoro_tts_service.generate_audio_file_from_text(conversation_segment.specialist_text)
-        # conversation_segment.callback(text)
+    # Guard clause: exit if no transcript was produced
+    if not conversation_segment.customer_text:
+        return
+
+    conversation_segment.specialist_text = conversation_segment.customer_text
+    # TODO feed to LLM
+    kokoro_tts_service.generate_audio_file_from_text(conversation_segment.specialist_text)
+    # conversation_segment.callback(text)
