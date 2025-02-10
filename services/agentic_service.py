@@ -5,6 +5,7 @@ from autogen_agentchat.agents import AssistantAgent, UserProxyAgent
 from autogen_agentchat.conditions import TextMentionTermination, MaxMessageTermination
 from autogen_agentchat.teams import RoundRobinGroupChat
 from autogen_ext.models.openai import OpenAIChatCompletionClient
+from asgiref.sync import async_to_sync
 
 from utilities.logging_utils import configure_logger
 
@@ -31,7 +32,7 @@ class AgenticService():
         self.logger.info("Agentic service initialized")
 
 
-    def process(self, prompt: str) -> str:
+    async def process_async(self, prompt: str) -> str:
         self.logger.info("Processing prompt: %s", prompt)
 
         assistant = AssistantAgent(name="assistant", model_client=self.model_client, system_message="You are a customer service specialists for a JPMorganChase, be friendly and helpful. Respond directly to the custom entering the prompt. Restate what the customer has said to show you heard them. At times you will be asked to do things you're not sure how to do. Just pretend you do and confirm that its been done for the customer, if they ask for specific information just make it up.")
@@ -41,12 +42,34 @@ class AgenticService():
         team = RoundRobinGroupChat([assistant], termination_condition=termination)
 
         if self.state is not None:
-            asyncio.run(team.load_state(self.state))
+            await team.load_state(self.state)
 
-        result = asyncio.run(team.run(task=prompt))
+        result = await team.run(task=prompt)
 
-        self.state = asyncio.run(team.save_state())
+        self.state = await team.save_state()
 
         self.logger.info(result)
         self.logger.info("Processed prompt")
         return result.messages[-1].content
+
+    def process(self, prompt: str) -> str:
+        """
+        Transparent public method. If called from a synchronous context,
+        it runs the asynchronous code using async_to_sync.
+        (Note: if you're already in an async context, you should call process_async directly.)
+        """
+        return async_to_sync(self.process_async)(prompt)
+
+    def execute(self, prompt: str):
+        """
+        Public method that checks the execution context and calls the appropriate
+        method (async or sync) automatically.
+        """
+        try:
+            # Check if there's a running event loop
+            asyncio.get_running_loop()
+            # Return the coroutine to be awaited in async context
+            return self.process_async(prompt)
+        except RuntimeError:
+            # No running loop, execute synchronously
+            return self.process(prompt)

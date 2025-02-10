@@ -12,7 +12,7 @@ transcription_gateway = TranscriptionGateway()
 agentic_service = AgenticService()
 tts_service = KokoroTtsService()
 
-def process_conversation_segment(conversation_segment: ConversationSegment):
+async def process_conversation_segment(conversation_segment: ConversationSegment):
 
     # TODO convert audio format if needed
 
@@ -24,7 +24,7 @@ def process_conversation_segment(conversation_segment: ConversationSegment):
         return
 
     # Call AutoGen to generate specialist response text
-    conversation_segment.specialist_text = agentic_service.process(conversation_segment.customer_text)
+    conversation_segment.specialist_text = await agentic_service.process_async(conversation_segment.customer_text)
 
     # Call Kokoro for text to speech
     wav_file_name = tts_service.generate_audio_file_from_text(conversation_segment.specialist_text)

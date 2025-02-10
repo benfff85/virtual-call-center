@@ -28,7 +28,7 @@ async def answer_call(request: Request):
     start = Start()
     start.stream(url=f"wss://{os.getenv('NGROK_DOMAIN')}/ws", name="MyAudioStream")
     response.append(start)
-    response.say("Speak, and I'll repeat your words.", language="en-US", voice="woman")
+    response.say("Thanks for calling, how can I help you today?", language="en-US", voice="woman")
     response.redirect(url="/call-keepalive", method="POST")
     return Response(content=str(response), media_type="application/xml")
 
@@ -74,12 +74,12 @@ async def handle_audio_stream(websocket: WebSocket):
                         callback=lambda specialist_text: logger.info(f"Transcribed customer audio: {specialist_text}")
                     )
 
-                    process_conversation_segment(conversation_segment)
+                    await process_conversation_segment(conversation_segment)
                     if not conversation_segment.specialist_audio_file:
                         continue
 
                     # speak_on_call(call_sid, conversation_segment.specialist_text)
-                    publish_audio_to_call(call_sid, "https://" + os.getenv('NGROK_DOMAIN') + "?filename=" + conversation_segment.specialist_audio_file)
+                    publish_audio_to_call(call_sid, "https://" + os.getenv('NGROK_DOMAIN') + "/twilio-play?filename=" + conversation_segment.specialist_audio_file)
 
                 # Close if inactive for 30 seconds
                 if time.time() - last_activity > 30:
@@ -91,7 +91,7 @@ async def handle_audio_stream(websocket: WebSocket):
                 continue
 
     except Exception as e:
-        logger.info("WebSocket error: %s", str(e))
+        logger.exception("WebSocket error:")
     finally:
         try:
             await websocket.close()
@@ -99,13 +99,12 @@ async def handle_audio_stream(websocket: WebSocket):
         except RuntimeError:
             pass
 
-PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
 
 @app.get("/twilio-play")
 async def twilio_play(filename: str = Query(..., description="Name of the .wav file (without extension)")):
     # Use os.path.basename to avoid directory traversal vulnerabilities
     safe_filename = os.path.basename(filename)
-    file_path = os.path.join(PROJECT_ROOT, f"{safe_filename}.wav")
+    file_path = os.path.join("/Users/benferenchak/IdeaProjects/virtual-call-center", f"{safe_filename}")
 
     if not os.path.isfile(file_path):
         raise HTTPException(status_code=404, detail="File not found")
