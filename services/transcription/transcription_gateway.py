@@ -16,7 +16,7 @@ class TranscriptionGateway:
 
         if self.transcription_service_prop == "whisper":
             self.logger.info(f"Using Whisper transcription service with model: {self.transcription_model_prop}")
-            self.transcription_service = WhisperTranscriptionService(model_name=self.transcription_model_prop, silence_duration=1.0)
+            self.transcription_service = WhisperTranscriptionService(model_name=self.transcription_model_prop, silence_duration=.5)
         else:
             self.logger.info(f"Using Vosk transcription service with model: {self.transcription_model_prop}")
             self.transcription_service = VoskTranscriptionService(model_name=self.transcription_model_prop)

@@ -1,6 +1,6 @@
 from schemas.conversation_segment import ConversationSegment
-from services import kokoro_tts_service
 from services.agentic_service import AgenticService
+from services.kokoro_tts_service import KokoroTtsService
 from services.transcription.transcription_gateway import TranscriptionGateway
 from utilities.logging_utils import configure_logger
 import logging
@@ -10,6 +10,7 @@ logger = configure_logger('conversation_segment_processor_service_logger', loggi
 
 transcription_gateway = TranscriptionGateway()
 agentic_service = AgenticService()
+tts_service = KokoroTtsService()
 
 def process_conversation_segment(conversation_segment: ConversationSegment):
 
@@ -26,7 +27,7 @@ def process_conversation_segment(conversation_segment: ConversationSegment):
     conversation_segment.specialist_text = agentic_service.process(conversation_segment.customer_text)
 
     # Call Kokoro for text to speech
-    wav_file_name = kokoro_tts_service.generate_audio_file_from_text(conversation_segment.specialist_text)
+    wav_file_name = tts_service.generate_audio_file_from_text(conversation_segment.specialist_text)
 
     # TODO add support for callid and sequence to filename
 

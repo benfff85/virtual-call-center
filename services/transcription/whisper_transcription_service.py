@@ -21,7 +21,7 @@ class WhisperTranscriptionService(TranscriptionService):
         self.silence_duration = silence_duration
         self.max_buffer_size = int(max_buffer_duration * sample_rate)
         self.audio_buffer = deque(maxlen=self.max_buffer_size)
-        self.silence_threshold = 0.01
+        self.silence_threshold = 0.05
         self.last_transcription = ""
         self.silence_start = None
 
