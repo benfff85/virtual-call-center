@@ -11,7 +11,7 @@ from schemas.audio_data import AudioData
 from schemas.conversation_input_channel_type import ConversationInputChannelType
 
 from schemas.conversation_segment import ConversationSegment
-from services.conversation_segment_processor_service import process_conversation_segment
+from services.conversation_segment_processor_service import ConversationSegmentProcessorService
 from utilities.logging_utils import configure_logger
 
 class MicrophoneInputChannelService:
@@ -35,6 +35,8 @@ class MicrophoneInputChannelService:
         self.processing_thread = None
 
         self.call_id = str(uuid.uuid4())
+        self.conversation_segment_processor_service = ConversationSegmentProcessorService()
+
 
         self.logger.info("Microphone input channel initialized")
 
@@ -75,7 +77,7 @@ class MicrophoneInputChannelService:
                     callback=lambda specialist_text: self.logger.info(f"Transcribed customer audio: {specialist_text}")
                 )
 
-                process_conversation_segment(conversation_segment)
+                self.conversation_segment_processor_service.process_conversation_segment(conversation_segment)
 
             except Exception as e:
                 if self.is_recording:

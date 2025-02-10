@@ -8,15 +8,15 @@ from twilio.twiml.voice_response import VoiceResponse, Start
 
 from schemas.conversation_input_channel_type import ConversationInputChannelType
 from schemas.conversation_segment import ConversationSegment
-from services.conversation_segment_processor_service import process_conversation_segment
+from services.conversation_segment_processor_service import ConversationSegmentProcessorService
 from utilities.logging_utils import configure_logger
 from utilities.fastapi_utils import log_request
-from services.transcription.whisper_transcription_service import WhisperTranscriptionService
-from clients.twilio_rest_client import speak_on_call, publish_audio_to_call
+from clients.twilio_rest_client import publish_audio_to_call
 from fastapi.responses import FileResponse
 
 
 logger = configure_logger('twilio_input_channel_service_logger', logging.INFO)
+conversation_segment_processor_service = ConversationSegmentProcessorService()
 
 app = FastAPI()
 
@@ -74,7 +74,7 @@ async def handle_audio_stream(websocket: WebSocket):
                         callback=lambda specialist_text: logger.info(f"Transcribed customer audio: {specialist_text}")
                     )
 
-                    await process_conversation_segment(conversation_segment)
+                    await conversation_segment_processor_service.process_conversation_segment(conversation_segment)
                     if not conversation_segment.specialist_audio_file:
                         continue
 

@@ -1,3 +1,5 @@
+from typing import Optional
+
 from schemas.conversation_segment import ConversationSegment
 from services.agentic_service import AgenticService
 from services.kokoro_tts_service import KokoroTtsService
@@ -6,35 +8,44 @@ from utilities.logging_utils import configure_logger
 import logging
 
 
-logger = configure_logger('conversation_segment_processor_service_logger', logging.INFO)
+class ConversationSegmentProcessorService:
+    """
+    Processes conversation segments by transcribing audio,
+    generating specialist responses, and creating audio output.
+    """
 
-transcription_gateway = TranscriptionGateway()
-agentic_service = AgenticService()
-tts_service = KokoroTtsService()
+    def __init__(
+            self,
+            transcription_gateway: Optional[TranscriptionGateway] = TranscriptionGateway(),
+            agentic_service: Optional[AgenticService] = AgenticService(),
+            tts_service: Optional[KokoroTtsService] = KokoroTtsService(),
+            logger: Optional[logging.Logger] = configure_logger('conversation_segment_processor_service_logger', logging.INFO)
+    ):
 
-async def process_conversation_segment(conversation_segment: ConversationSegment):
+        self.transcription_gateway = transcription_gateway or TranscriptionGateway()
+        self.agentic_service = agentic_service or AgenticService()
+        self.tts_service = tts_service or KokoroTtsService()
+        self.logger = logger
 
-    # TODO convert audio format if needed
+    async def process_conversation_segment(self, conversation_segment: ConversationSegment):
 
-    # Transcribe audio
-    conversation_segment.customer_text = transcription_gateway.transcribe(conversation_segment.customer_audio.raw_audio)
+        # TODO convert audio format if needed
 
-    # Guard clause: exit if no transcript was produced
-    if not conversation_segment.customer_text:
-        return
+        # Transcribe audio
+        conversation_segment.customer_text = self.transcription_gateway.transcribe(conversation_segment.customer_audio.raw_audio)
 
-    # Call AutoGen to generate specialist response text
-    conversation_segment.specialist_text = await agentic_service.process_async(conversation_segment.customer_text)
+        # Guard clause: exit if no transcript was produced
+        if not conversation_segment.customer_text:
+            return
 
-    # Call Kokoro for text to speech
-    wav_file_name = tts_service.generate_audio_file_from_text(conversation_segment.specialist_text)
+        # Call AutoGen to generate specialist response text
+        conversation_segment.specialist_text = await self.agentic_service.process_async(conversation_segment.customer_text)
 
-    # TODO add support for callid and sequence to filename
+        # Call Kokoro for text to speech
+        wav_file_name = self.tts_service.generate_audio_file_from_text(conversation_segment.specialist_text)
 
-    conversation_segment.specialist_audio_file = wav_file_name
+        # TODO add support for callid and sequence to filename
 
-    # TODO move to audio output channel
+        conversation_segment.specialist_audio_file = wav_file_name
 
-
-if __name__ == '__main__':
-    process_conversation_segment()
+        # TODO move to audio output channel
