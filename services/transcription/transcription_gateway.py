@@ -1,6 +1,7 @@
 import logging
 import os
 
+from services.transcription.vosk_transcription_service import VoskTranscriptionService
 from services.transcription.whisper_transcription_service import WhisperTranscriptionService
 from utilities.logging_utils import configure_logger
 
@@ -17,9 +18,8 @@ class TranscriptionGateway:
             self.logger.info(f"Using Whisper transcription service with model: {self.transcription_model_prop}")
             self.transcription_service = WhisperTranscriptionService(model_name=self.transcription_model_prop, silence_duration=1.0)
         else:
-            self.logger.error(f"Unknown transcription service: {self.transcription_service_prop}")
-            # TODO - Add Vosk
-            # self.transcription_service = VoskTranscriptionService(model_name=self.transcription_model_prop, silence_duration=1.0)
+            self.logger.info(f"Using Vosk transcription service with model: {self.transcription_model_prop}")
+            self.transcription_service = VoskTranscriptionService(model_name=self.transcription_model_prop)
 
         self.logger.info("Transcription gateway initialized")
 

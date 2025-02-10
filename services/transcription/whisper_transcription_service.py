@@ -10,7 +10,7 @@ from typing import Optional
 import time
 
 class WhisperTranscriptionService(TranscriptionService):
-    def __init__(self, model_name: str = 'large-v3-turbo',
+    def __init__(self, model_name: str,
                  models_dir: str = './models/whisper',
                  silence_duration: float = 1.0,  # Duration of silence to trigger processing (in seconds)
                  sample_rate: int = 16000,
