@@ -2,18 +2,23 @@ import json
 import os
 import time
 import logging
-from fastapi import FastAPI, WebSocket, Request, Response
+from fastapi import FastAPI, WebSocket, Request, Response, Query, HTTPException
+from schemas.audio_data import AudioData
 from twilio.twiml.voice_response import VoiceResponse, Start
 
+from schemas.conversation_input_channel_type import ConversationInputChannelType
+from schemas.conversation_segment import ConversationSegment
+from services.conversation_segment_processor_service import process_conversation_segment
 from utilities.logging_utils import configure_logger
 from utilities.fastapi_utils import log_request
 from services.transcription.whisper_transcription_service import WhisperTranscriptionService
-from clients.twilio_rest_client import speak_on_call
+from clients.twilio_rest_client import speak_on_call, publish_audio_to_call
+from fastapi.responses import FileResponse
+
 
 logger = configure_logger('twilio_input_channel_service_logger', logging.INFO)
 
 app = FastAPI()
-whisper_transcription_service = WhisperTranscriptionService(silence_duration=1.0)
 
 @app.post("/answer")
 async def answer_call(request: Request):
@@ -60,9 +65,21 @@ async def handle_audio_stream(websocket: WebSocket):
                     continue
 
                 if message.get("event") == "media" and stream_initialized:
-                    text = whisper_transcription_service.process_audio(message["media"]["payload"])
-                    if text:
-                        speak_on_call(call_sid, text)
+
+                    # Instantiate a ConversationSegment object
+                    conversation_segment = ConversationSegment(
+                        call_id=call_sid,
+                        input_audio_channel=ConversationInputChannelType.TWILIO,
+                        customer_audio=AudioData(raw_audio=message["media"]["payload"], format="ULAW", frequency=8000, channels=1, bit_depth=16),
+                        callback=lambda specialist_text: logger.info(f"Transcribed customer audio: {specialist_text}")
+                    )
+
+                    process_conversation_segment(conversation_segment)
+                    if not conversation_segment.specialist_audio_file:
+                        continue
+
+                    # speak_on_call(call_sid, conversation_segment.specialist_text)
+                    publish_audio_to_call(call_sid, "https://" + os.getenv('NGROK_DOMAIN') + "?filename=" + conversation_segment.specialist_audio_file)
 
                 # Close if inactive for 30 seconds
                 if time.time() - last_activity > 30:
@@ -81,3 +98,16 @@ async def handle_audio_stream(websocket: WebSocket):
             logger.info("WebSocket connection closed")
         except RuntimeError:
             pass
+
+PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
+
+@app.get("/twilio-play")
+async def twilio_play(filename: str = Query(..., description="Name of the .wav file (without extension)")):
+    # Use os.path.basename to avoid directory traversal vulnerabilities
+    safe_filename = os.path.basename(filename)
+    file_path = os.path.join(PROJECT_ROOT, f"{safe_filename}.wav")
+
+    if not os.path.isfile(file_path):
+        raise HTTPException(status_code=404, detail="File not found")
+
+    return FileResponse(file_path, media_type="audio/wav")

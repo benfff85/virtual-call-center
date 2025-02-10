@@ -22,11 +22,15 @@ def process_conversation_segment(conversation_segment: ConversationSegment):
     if not conversation_segment.customer_text:
         return
 
-    # conversation_segment.specialist_text = conversation_segment.customer_text
+    # Call AutoGen to generate specialist response text
     conversation_segment.specialist_text = agentic_service.process(conversation_segment.customer_text)
 
+    # Call Kokoro for text to speech
     wav_file_name = kokoro_tts_service.generate_audio_file_from_text(conversation_segment.specialist_text)
-    # conversation_segment.callback(text)
+
+    # TODO add support for callid and sequence to filename
+
+    conversation_segment.specialist_audio_file = wav_file_name
 
     # TODO move to audio output channel
 

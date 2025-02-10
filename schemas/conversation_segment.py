@@ -14,4 +14,5 @@ class ConversationSegment(BaseModel):
 
     output_audio_channel: ConversationOutputChannelType = None
     specialist_text: Optional[str] = None
+    specialist_audio_file: Optional[str] = None
     callback: Callable[[str], None]
