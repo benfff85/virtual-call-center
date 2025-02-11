@@ -1,12 +1,8 @@
 import logging
-import os
-
+import numpy as np
 from kokoro import KPipeline
-import soundfile as sf
-from pydub import AudioSegment
 
 from utilities.logging_utils import configure_logger
-
 
 
 class KokoroTtsService:
@@ -19,23 +15,17 @@ class KokoroTtsService:
         self.logger.info("Kokoro TTS service initialized")
 
 
-
-    def generate_audio_file_from_text(self, text_to_speak: str) -> str:
+    def generate_audio_data_from_text(self, text_to_speak: str) -> np.ndarray:
 
         self.logger.info("Processing tts")
         generator = self.pipeline(text=text_to_speak, voice='af_heart', speed=1, split_pattern=r'\n+')
 
-        chunk_paths = []
-        for i, (gs, ps, audio) in enumerate(generator):
-            sf.write(f'{i}.wav', audio, 24000) # save each audio file
-            chunk_paths.append(f'{i}.wav')
+        audio_chunks = []
+        # Process each chunk
+        for _, _, audio in generator:
+            audio_chunks.append(audio)
 
-        combined = AudioSegment.empty()
-        for path in chunk_paths:
-            combined += AudioSegment.from_wav(path)
-            os.remove(path)
-
-        combined.export("combined.wav", format="wav")
+        combined_audio = np.concatenate(audio_chunks)
         self.logger.info("completed text to speech")
 
-        return "combined.wav"
+        return combined_audio

@@ -6,6 +6,7 @@ from services.kokoro_tts_service import KokoroTtsService
 from services.transcription.transcription_gateway import TranscriptionGateway
 from utilities.logging_utils import configure_logger
 import logging
+import soundfile as sf
 
 
 class ConversationSegmentProcessorService:
@@ -42,10 +43,11 @@ class ConversationSegmentProcessorService:
         conversation_segment.specialist_text = await self.agentic_service.process_async(conversation_segment.customer_text)
 
         # Call Kokoro for text to speech
-        wav_file_name = self.tts_service.generate_audio_file_from_text(conversation_segment.specialist_text)
+        audio_data = self.tts_service.generate_audio_data_from_text(conversation_segment.specialist_text)
 
         # TODO add support for callid and sequence to filename
+        sf.write("combined.wav", audio_data, 24000, format='WAV', subtype='PCM_16')
 
-        conversation_segment.specialist_audio_file = wav_file_name
+        conversation_segment.specialist_audio_file = "combined.wav"
 
         # TODO move to audio output channel
