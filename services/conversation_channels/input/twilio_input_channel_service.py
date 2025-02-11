@@ -11,7 +11,6 @@ from schemas.conversation_segment import ConversationSegment
 from services.conversation_segment_processor_service import ConversationSegmentProcessorService
 from utilities.logging_utils import configure_logger
 from utilities.fastapi_utils import log_request
-from clients.twilio_rest_client import publish_audio_to_call
 from fastapi.responses import FileResponse
 
 
@@ -69,16 +68,10 @@ async def handle_audio_stream(websocket: WebSocket):
                     conversation_segment = ConversationSegment(
                         call_id=call_sid,
                         input_audio_channel=ConversationInputChannelType.TWILIO,
-                        customer_audio=AudioData(raw_audio=message["media"]["payload"], format="ULAW", frequency=8000, channels=1, bit_depth=16),
-                        callback=lambda specialist_text: logger.info(f"Transcribed customer audio: {specialist_text}")
+                        customer_audio=AudioData(raw_audio=message["media"]["payload"], format="ULAW", frequency=8000, channels=1, bit_depth=16)
                     )
 
                     await conversation_segment_processor_service.process_conversation_segment(conversation_segment)
-                    if not conversation_segment.specialist_audio_file:
-                        continue
-
-                    # speak_on_call(call_sid, conversation_segment.specialist_text)
-                    publish_audio_to_call(call_sid, "https://" + os.getenv('NGROK_DOMAIN') + "/twilio-play?filename=" + conversation_segment.specialist_audio_file)
 
                 # Close if inactive for 30 seconds
                 if time.time() - last_activity > 30:
@@ -100,10 +93,11 @@ async def handle_audio_stream(websocket: WebSocket):
 
 
 @app.get("/twilio-play")
-async def twilio_play(filename: str = Query(..., description="Name of the .wav file (without extension)")):
+async def twilio_play(filename: str = Query(..., description="Name of the .wav file")):
     # Use os.path.basename to avoid directory traversal vulnerabilities
     safe_filename = os.path.basename(filename)
-    file_path = os.path.join("/Users/benferenchak/IdeaProjects/virtual-call-center", f"{safe_filename}")
+
+    file_path = os.path.join(os.getenv('AUDIO_CLIP_DIR'), f"{safe_filename}")
 
     if not os.path.isfile(file_path):
         raise HTTPException(status_code=404, detail="File not found")

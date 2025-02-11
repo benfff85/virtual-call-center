@@ -75,11 +75,11 @@ class MicrophoneInputChannelService:
                 conversation_segment = ConversationSegment(
                     call_id=self.call_id,
                     input_audio_channel=ConversationInputChannelType.LAPTOP_MICROPHONE,
-                    customer_audio=AudioData(raw_audio=audio_data, format="ULAW", frequency=8000, channels=1, bit_depth=16),
-                    callback=lambda specialist_text: self.logger.info(f"Transcribed customer audio: {specialist_text}")
+                    customer_audio=AudioData(raw_audio=audio_data, format="ULAW", frequency=8000, channels=1, bit_depth=16)
                 )
 
                 await self.conversation_segment_processor_service.process_conversation_segment(conversation_segment)
+
             except asyncio.TimeoutError:
                 continue
             except Exception as e:
