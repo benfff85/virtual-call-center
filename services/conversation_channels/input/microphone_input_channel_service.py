@@ -1,6 +1,7 @@
 import asyncio
 import uuid
-import janus
+from queue import Queue
+
 import sounddevice as sd
 import numpy as np
 import base64
@@ -31,12 +32,11 @@ class MicrophoneInputChannelService:
         self.stream_initialized = False
 
         # Processing thread and queue
-        self.audio_queue = janus.Queue()
+        self.audio_queue = Queue()
         self.processing_thread = None
 
         self.call_id = str(uuid.uuid4())
         self.conversation_segment_processor_service = ConversationSegmentProcessorService()
-
 
         self.logger.info("Microphone input channel initialized")
 
@@ -58,8 +58,8 @@ class MicrophoneInputChannelService:
                 # Encode to base64
                 encoded = base64.b64encode(audio_ulaw).decode('utf-8')
 
-                # self.audio_queue.put(encoded)
-                self.audio_queue.sync_q.put(encoded)
+                self.audio_queue.put(encoded)
+
             except Exception as e:
                 self.logger.error(f"Error in audio callback: {str(e)}")
 
@@ -69,7 +69,7 @@ class MicrophoneInputChannelService:
         while self.is_recording:
             try:
 
-                audio_data = await self.audio_queue.async_q.get()
+                audio_data = self.audio_queue.get(timeout=1.0)
 
                 # Instantiate a ConversationSegment object
                 conversation_segment = ConversationSegment(
