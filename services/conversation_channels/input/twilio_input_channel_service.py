@@ -9,6 +9,7 @@ from schemas.audio_data import AudioData
 from twilio.twiml.voice_response import VoiceResponse, Start
 
 from schemas.conversation_input_channel_type import ConversationInputChannelType
+from schemas.conversation_output_channel_type import ConversationOutputChannelType
 from schemas.conversation_segment import ConversationSegment
 from services.conversation_segment_processor_service import ConversationSegmentProcessorService
 from utilities.logging_utils import configure_logger
@@ -70,7 +71,8 @@ async def handle_audio_stream(websocket: WebSocket):
                     conversation_segment = ConversationSegment(
                         call_id=call_sid,
                         input_audio_channel=ConversationInputChannelType.TWILIO,
-                        customer_audio=AudioData(raw_audio=message["media"]["payload"], format="ULAW", frequency=8000, channels=1, bit_depth=16)
+                        customer_audio=AudioData(raw_audio=message["media"]["payload"], format="ULAW", frequency=8000, channels=1, bit_depth=16),
+                        output_audio_channel=ConversationOutputChannelType.TWILIO
                     )
 
                     await conversation_segment_processor_service.process_conversation_segment(conversation_segment)
