@@ -1,11 +1,9 @@
-import asyncio
 import logging
 
 from autogen_agentchat.agents import AssistantAgent, UserProxyAgent
 from autogen_agentchat.conditions import TextMentionTermination, MaxMessageTermination
 from autogen_agentchat.teams import RoundRobinGroupChat
 from autogen_ext.models.openai import OpenAIChatCompletionClient
-from asgiref.sync import async_to_sync
 
 from utilities.logging_utils import configure_logger
 
