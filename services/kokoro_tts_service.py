@@ -26,11 +26,9 @@ class KokoroTtsService:
         generator = self.pipeline(text=text_to_speak, voice='af_heart', speed=1, split_pattern=r'\n+')
 
         chunk_paths = []
-        self.logger.info(f"Generating text to speech --- {text_to_speak}")
         for i, (gs, ps, audio) in enumerate(generator):
             sf.write(f'{i}.wav', audio, 24000) # save each audio file
             chunk_paths.append(f'{i}.wav')
-            self.logger.info(f"Audio saved to {i}.wav")
 
         combined = AudioSegment.empty()
         for path in chunk_paths:
