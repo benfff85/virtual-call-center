@@ -1,12 +1,12 @@
+import asyncio
 import uuid
-
+import janus
 import sounddevice as sd
 import numpy as np
 import base64
 import logging
 import threading
 import audioop
-from queue import Queue
 from schemas.audio_data import AudioData
 from schemas.conversation_input_channel_type import ConversationInputChannelType
 
@@ -31,7 +31,7 @@ class MicrophoneInputChannelService:
         self.stream_initialized = False
 
         # Processing thread and queue
-        self.audio_queue = Queue()
+        self.audio_queue = janus.Queue()
         self.processing_thread = None
 
         self.call_id = str(uuid.uuid4())
@@ -58,16 +58,18 @@ class MicrophoneInputChannelService:
                 # Encode to base64
                 encoded = base64.b64encode(audio_ulaw).decode('utf-8')
 
-                self.audio_queue.put(encoded)
+                # self.audio_queue.put(encoded)
+                self.audio_queue.sync_q.put(encoded)
             except Exception as e:
                 self.logger.error(f"Error in audio callback: {str(e)}")
 
-    def _process_audio_queue(self):
+    async def _process_audio_queue(self):
         """Continuously process audio data from the queue."""
         self.logger.info("Audio processing thread started")
         while self.is_recording:
             try:
-                audio_data = self.audio_queue.get(timeout=1.0)
+
+                audio_data = await self.audio_queue.async_q.get()
 
                 # Instantiate a ConversationSegment object
                 conversation_segment = ConversationSegment(
@@ -77,11 +79,18 @@ class MicrophoneInputChannelService:
                     callback=lambda specialist_text: self.logger.info(f"Transcribed customer audio: {specialist_text}")
                 )
 
-                self.conversation_segment_processor_service.process_conversation_segment(conversation_segment)
-
+                await self.conversation_segment_processor_service.process_conversation_segment(conversation_segment)
+            except asyncio.TimeoutError:
+                continue
             except Exception as e:
                 if self.is_recording:
                     self.logger.error(f"Error processing audio: {str(e)}")
+
+    def _run_async_loop(self):
+        """Run async processor in dedicated thread"""
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        loop.run_until_complete(self._process_audio_queue())
 
     def start_recording(self):
         """Start recording audio from the microphone."""
@@ -102,9 +111,9 @@ class MicrophoneInputChannelService:
             )
             self.stream.start()
 
-            # Start a separate thread to process audio data from the queue
+            # Start async processor in separate thread
             self.processing_thread = threading.Thread(
-                target=self._process_audio_queue,
+                target=self._run_async_loop,
                 daemon=True
             )
             self.processing_thread.start()
