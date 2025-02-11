@@ -3,6 +3,8 @@ import os
 import time
 import logging
 from fastapi import FastAPI, WebSocket, Request, Response, Query, HTTPException
+from starlette.websockets import WebSocketDisconnect
+
 from schemas.audio_data import AudioData
 from twilio.twiml.voice_response import VoiceResponse, Start
 
@@ -82,6 +84,8 @@ async def handle_audio_stream(websocket: WebSocket):
                 logger.info("Received invalid JSON message")
                 continue
 
+    except WebSocketDisconnect as e:
+        logger.info("WebSocket connection closed")
     except Exception as e:
         logger.exception("WebSocket error:")
     finally:
