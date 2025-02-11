@@ -1,14 +1,13 @@
-import os
+import logging
 from typing import Optional
 
-from clients.twilio_rest_client import publish_audio_to_call
 from schemas.conversation_segment import ConversationSegment
 from services.agentic_service import AgenticService
 from services.audio_persistence_service import AudioPersistenceService
+from services.conversation_channels.output.twilio_output_channel_service import TwilioOutputChannelService
 from services.kokoro_tts_service import KokoroTtsService
 from services.transcription.transcription_gateway import TranscriptionGateway
 from utilities.logging_utils import configure_logger
-import logging
 
 
 class ConversationSegmentProcessorService:
@@ -30,6 +29,7 @@ class ConversationSegmentProcessorService:
         self.agentic_service = agentic_service or AgenticService()
         self.tts_service = tts_service or KokoroTtsService()
         self.audio_persistence_service = audio_persistence_service or AudioPersistenceService()
+        self.audio_output_channel = TwilioOutputChannelService() # TODO Consider adding gateway to drive off of convo segment output channel type
         self.logger = logger
 
     async def process_conversation_segment(self, conversation_segment: ConversationSegment):
@@ -52,6 +52,8 @@ class ConversationSegmentProcessorService:
         # Save audio to disk
         self.audio_persistence_service.write_wav_file(conversation_segment)
 
-        # TODO move to audio output channel
-        publish_audio_to_call(conversation_segment.call_id, "https://" + os.getenv('NGROK_DOMAIN') + "/twilio-play?filename=" + conversation_segment.specialist_audio_file)
+        # Publish audio to Twilio
+        self.audio_output_channel.publish_audio(conversation_segment)
+
+
 

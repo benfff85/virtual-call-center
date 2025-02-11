@@ -7,6 +7,7 @@ from twilio.twiml.voice_response import VoiceResponse
 logger = configure_logger('twilio_rest_client_logger', logging.INFO)
 
 def speak_on_call(call_sid: str, text_to_speak: str):
+    """Send text to twilio for twilio tts to speak on the call"""
     client = Client(os.environ['TWILIO_ACCOUNT_SID'],
                     os.environ['TWILIO_AUTH_TOKEN'])
 
@@ -27,13 +28,14 @@ def speak_on_call(call_sid: str, text_to_speak: str):
         return False
 
 def publish_audio_to_call(call_sid: str, audio_file_location: str):
+    """Send audio file callback to twilio for twilio to play on the call"""
     client = Client(os.environ['TWILIO_ACCOUNT_SID'],
                     os.environ['TWILIO_AUTH_TOKEN'])
 
     # Create TwiML with <Play> command
     twiml = VoiceResponse()
     twiml.play(url=audio_file_location)
-    twiml.redirect(url="https://promptly-alert-sparrow.ngrok-free.app/call-keepalive", method="POST")
+    twiml.redirect(url=f"https://{os.environ['NGROK_DOMAIN']}/call-keepalive", method="POST")
 
     try:
         # Update the live call with new TwiML instructions
