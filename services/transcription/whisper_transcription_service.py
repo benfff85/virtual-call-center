@@ -114,7 +114,7 @@ class WhisperTranscriptionService(TranscriptionService):
                     # Only process if we have meaningful audio before the silence
                     if not self._is_silence(audio_array[:int(len(audio_array) * 0.8)]):
                         # Log buffer size for debugging
-                        self.logger.debug(f"Processing buffer of size: {len(audio_array)} samples")
+                        self.logger.info(f"Processing transcription for buffer of size: {len(audio_array)} samples")
 
                         # Transcribe the audio
                         result = self.whisper_model.transcribe(audio_array)

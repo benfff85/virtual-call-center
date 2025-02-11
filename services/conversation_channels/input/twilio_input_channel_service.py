@@ -34,9 +34,8 @@ async def answer_call(request: Request):
 
 @app.post("/call-keepalive")
 async def call_keepalive(request: Request):
-    logger.info("Keepalive...")
     response = VoiceResponse()
-    response.pause(length=15)
+    response.pause(length=30)
     response.redirect(url="/call-keepalive", method="POST")
     return Response(content=str(response), media_type="application/xml")
 

@@ -26,6 +26,6 @@ class KokoroTtsService:
             audio_chunks.append(audio)
 
         combined_audio = np.concatenate(audio_chunks)
-        self.logger.info("completed text to speech")
+        self.logger.info("Completed tts")
 
         return combined_audio

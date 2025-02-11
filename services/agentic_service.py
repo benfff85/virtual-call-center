@@ -31,7 +31,7 @@ class AgenticService():
 
 
     async def process_async(self, prompt: str) -> str:
-        self.logger.info("Processing prompt: %s", prompt)
+        self.logger.info("Processing customer prompt")
 
         assistant = AssistantAgent(name="assistant", model_client=self.model_client, system_message="You are a customer service specialists for a JPMorganChase, be friendly and helpful. Respond directly to the custom entering the prompt. Restate what the customer has said to show you heard them. At times you will be asked to do things you're not sure how to do. Just pretend you do and confirm that its been done for the customer, if they ask for specific information just make it up.")
         user_proxy = UserProxyAgent("user_proxy")
@@ -46,6 +46,5 @@ class AgenticService():
 
         self.state = await team.save_state()
 
-        self.logger.info(result)
-        self.logger.info("Processed prompt")
+        self.logger.info(f"Processing prompt completed, specialist response generated: {result}")
         return result.messages[-1].content

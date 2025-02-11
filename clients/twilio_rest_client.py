@@ -14,7 +14,6 @@ def speak_on_call(call_sid: str, text_to_speak: str):
     twiml = VoiceResponse()
     twiml.say(text_to_speak, voice='woman', language='en-US')
     twiml.redirect(url=f"https://{os.environ['NGROK_DOMAIN']}/call-keepalive", method="POST")
-    # twiml.redirect(url="https://promptly-alert-sparrow.ngrok-free.app/call-keepalive", method="POST")
 
     try:
         # Update the live call with new TwiML instructions
@@ -31,10 +30,9 @@ def publish_audio_to_call(call_sid: str, audio_file_location: str):
     client = Client(os.environ['TWILIO_ACCOUNT_SID'],
                     os.environ['TWILIO_AUTH_TOKEN'])
 
-    # Create TwiML with <Say> command
+    # Create TwiML with <Play> command
     twiml = VoiceResponse()
     twiml.play(url=audio_file_location)
-    # twiml.redirect(url=f"https://{os.environ['NGROK_DOMAIN']}/call-keepalive", method="POST")
     twiml.redirect(url="https://promptly-alert-sparrow.ngrok-free.app/call-keepalive", method="POST")
 
     try:
@@ -42,7 +40,7 @@ def publish_audio_to_call(call_sid: str, audio_file_location: str):
         call = client.calls(call_sid).update(
             twiml=twiml.to_xml()
         )
-        logger.info("Sending audio to call %s message", call.sid)
+        logger.info(f"Sending audio to call {call.sid} file: {audio_file_location}", )
         return True
     except Exception as e:
         logger.info("Error updating call: %s", str(e))
