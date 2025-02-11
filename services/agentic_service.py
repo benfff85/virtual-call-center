@@ -1,4 +1,5 @@
 import logging
+import os
 
 from autogen_agentchat.agents import AssistantAgent, UserProxyAgent
 from autogen_agentchat.conditions import TextMentionTermination, MaxMessageTermination
@@ -14,8 +15,7 @@ class AgenticService():
         self.logger.info("Agentic service initializing...")
 
         self.model_client = OpenAIChatCompletionClient(
-            model="llama3.2:latest",
-            # model="qwen2.5:32b",
+            model= os.getenv('LLM_MODEL'),
             base_url="http://localhost:11434/v1",
             api_key="none",
             model_info={
