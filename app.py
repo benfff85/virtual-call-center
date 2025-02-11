@@ -1,9 +1,12 @@
 import os
+import warnings
+
 from dotenv import load_dotenv
 
 load_dotenv()
 
 AUDIO_INPUT_CHANNEL = os.getenv("AUDIO_INPUT_CHANNEL", "microphone").lower()
+warnings.filterwarnings("ignore") # Hide Kokoro Torch warnings
 
 if AUDIO_INPUT_CHANNEL == "microphone":
     # Import and explicitly run the microphone mode
