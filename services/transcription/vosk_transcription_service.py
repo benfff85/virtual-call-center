@@ -1,13 +1,14 @@
+import audioop
+import base64
+import json
+import logging
 from typing import Optional
 
 from vosk import Model, KaldiRecognizer
 
 from services.transcription.transcription_service import TranscriptionService
 from utilities.logging_utils import configure_logger
-import base64
-import audioop
-import logging
-import json
+
 
 class VoskTranscriptionService(TranscriptionService):
     def __init__(self, model_name: str):

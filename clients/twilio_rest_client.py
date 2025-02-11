@@ -1,8 +1,10 @@
-from twilio.rest import Client
 import logging
 import os
-from utilities.logging_utils import configure_logger
+
+from twilio.rest import Client
 from twilio.twiml.voice_response import VoiceResponse
+
+from utilities.logging_utils import configure_logger
 
 logger = configure_logger('twilio_rest_client_logger', logging.INFO)
 

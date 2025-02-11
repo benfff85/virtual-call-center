@@ -1,9 +1,10 @@
 import logging
 import os
 
+import soundfile as sf
+
 from schemas.conversation_segment import ConversationSegment
 from utilities.logging_utils import configure_logger
-import soundfile as sf
 
 
 class AudioPersistenceService:

@@ -1,6 +1,8 @@
+from typing import Optional
+
 import numpy as np
 from pydantic import BaseModel
-from typing import Optional
+
 from schemas.audio_data import AudioData
 from schemas.conversation_input_channel_type import ConversationInputChannelType
 from schemas.conversation_output_channel_type import ConversationOutputChannelType

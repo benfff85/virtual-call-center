@@ -1,13 +1,16 @@
-from services.transcription.transcription_service import TranscriptionService
-from utilities.logging_utils import configure_logger
-import base64
 import audioop
+import base64
 import logging
-import numpy as np
-from pywhispercpp.model import Model
+import time
 from collections import deque
 from typing import Optional
-import time
+
+import numpy as np
+from pywhispercpp.model import Model
+
+from services.transcription.transcription_service import TranscriptionService
+from utilities.logging_utils import configure_logger
+
 
 class WhisperTranscriptionService(TranscriptionService):
     def __init__(self, model_name: str,

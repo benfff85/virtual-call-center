@@ -1,20 +1,21 @@
 import asyncio
-import uuid
-from queue import Queue
-
-import sounddevice as sd
-import numpy as np
+import audioop
 import base64
 import logging
 import threading
-import audioop
+import uuid
+from queue import Queue
+
+import numpy as np
+import sounddevice as sd
+
 from schemas.audio_data import AudioData
 from schemas.conversation_input_channel_type import ConversationInputChannelType
 from schemas.conversation_output_channel_type import ConversationOutputChannelType
-
 from schemas.conversation_segment import ConversationSegment
 from services.conversation_segment_processor_service import ConversationSegmentProcessorService
 from utilities.logging_utils import configure_logger
+
 
 class MicrophoneInputChannelService:
     def __init__(self,

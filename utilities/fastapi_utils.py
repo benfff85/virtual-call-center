@@ -1,7 +1,9 @@
 import json
-from fastapi import Request
-from typing import Dict, Any
 import logging
+from typing import Dict, Any
+
+from fastapi import Request
+
 from utilities.logging_utils import configure_logger
 
 logger = configure_logger('fastapi_utils_logger', logging.INFO)

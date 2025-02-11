@@ -1,21 +1,20 @@
 import json
+import logging
 import os
 import time
-import logging
-from fastapi import FastAPI, WebSocket, Request, Response, Query, HTTPException
-from starlette.websockets import WebSocketDisconnect
 
-from schemas.audio_data import AudioData
+from fastapi import FastAPI, WebSocket, Request, Response, Query, HTTPException
+from fastapi.responses import FileResponse
+from starlette.websockets import WebSocketDisconnect
 from twilio.twiml.voice_response import VoiceResponse, Start
 
+from schemas.audio_data import AudioData
 from schemas.conversation_input_channel_type import ConversationInputChannelType
 from schemas.conversation_output_channel_type import ConversationOutputChannelType
 from schemas.conversation_segment import ConversationSegment
 from services.conversation_segment_processor_service import ConversationSegmentProcessorService
-from utilities.logging_utils import configure_logger
 from utilities.fastapi_utils import log_request
-from fastapi.responses import FileResponse
-
+from utilities.logging_utils import configure_logger
 
 logger = configure_logger('twilio_input_channel_service_logger', logging.INFO)
 conversation_segment_processor_service = ConversationSegmentProcessorService()
