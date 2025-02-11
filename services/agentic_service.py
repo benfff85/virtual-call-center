@@ -51,25 +51,3 @@ class AgenticService():
         self.logger.info(result)
         self.logger.info("Processed prompt")
         return result.messages[-1].content
-
-    def process(self, prompt: str) -> str:
-        """
-        Transparent public method. If called from a synchronous context,
-        it runs the asynchronous code using async_to_sync.
-        (Note: if you're already in an async context, you should call process_async directly.)
-        """
-        return async_to_sync(self.process_async)(prompt)
-
-    def execute(self, prompt: str):
-        """
-        Public method that checks the execution context and calls the appropriate
-        method (async or sync) automatically.
-        """
-        try:
-            # Check if there's a running event loop
-            asyncio.get_running_loop()
-            # Return the coroutine to be awaited in async context
-            return self.process_async(prompt)
-        except RuntimeError:
-            # No running loop, execute synchronously
-            return self.process(prompt)
