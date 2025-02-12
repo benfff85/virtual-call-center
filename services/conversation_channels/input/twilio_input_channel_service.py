@@ -29,7 +29,7 @@ async def answer_call(request: Request):
     start = Start()
     start.stream(url=f"wss://{os.getenv('NGROK_DOMAIN')}/ws", name="MyAudioStream")
     response.append(start)
-    response.say("Thanks for calling, how can I help you today?", language="en-US", voice="woman")
+    response.play(url="https://" + os.getenv('NGROK_DOMAIN') + "/twilio-play?filename=chase-greeting.wav")
     response.redirect(url="/call-keepalive", method="POST")
     return Response(content=str(response), media_type="application/xml")
 
