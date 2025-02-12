@@ -1,4 +1,5 @@
 import logging
+import os
 
 import numpy as np
 from kokoro import KPipeline
@@ -11,7 +12,7 @@ class KokoroTtsService:
         self.logger = configure_logger('kokoro_tts_service_logger', logging.INFO)
         self.logger.info("Kokoro TTS service initializing...")
 
-        self.pipeline = KPipeline(lang_code='a')
+        self.pipeline = KPipeline(lang_code='a', device='mps')
 
         self.logger.info("Kokoro TTS service initialized")
 
@@ -19,7 +20,7 @@ class KokoroTtsService:
     def generate_audio_data_from_text(self, text_to_speak: str) -> np.ndarray:
 
         self.logger.info("Processing tts")
-        generator = self.pipeline(text=text_to_speak, voice='af_heart', speed=1, split_pattern=r'\n+')
+        generator = self.pipeline(text=text_to_speak, voice=os.getenv('TTS_VOICE'), speed=1, split_pattern=r'\n+')
 
         audio_chunks = []
         # Process each chunk
