@@ -29,7 +29,14 @@ async def answer_call(request: Request):
     start = Start()
     start.stream(url=f"wss://{os.getenv('NGROK_DOMAIN')}/ws", name="MyAudioStream")
     response.append(start)
-    response.play(url="https://" + os.getenv('NGROK_DOMAIN') + "/twilio-play?filename=chase-greeting.wav")
+
+    # Check if pre-recorded greeting in the specified voice exists, if so use it, otherwise use twilio tts to say the greeting
+    prerecorded_greeting_file_name="chase-greeting-" + os.getenv('TTS_VOICE') + ".wav"
+    if os.path.exists(os.getenv('AUDIO_CLIP_DIR') + "/" + prerecorded_greeting_file_name):
+        response.play(url="https://" + os.getenv('NGROK_DOMAIN') + "/twilio-play?filename=" + prerecorded_greeting_file_name)
+    else:
+        response.say("Thank you for calling Chase. How can I help you today?")
+
     response.redirect(url="/call-keepalive", method="POST")
     return Response(content=str(response), media_type="application/xml")
 
