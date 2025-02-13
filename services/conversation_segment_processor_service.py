@@ -1,6 +1,8 @@
 import logging
 from typing import Optional
 
+from clients.twilio_rest_client import interrupt_specialist_audio
+from schemas.conversation_output_channel_type import ConversationOutputChannelType
 from schemas.conversation_segment import ConversationSegment
 from services.agentic_service import AgenticService
 from services.audio_persistence_service import AudioPersistenceService
@@ -45,13 +47,15 @@ class ConversationSegmentProcessorService:
         if not conversation_segment.customer_text:
             return
 
-        # TODO issue interrupt
+        # If using twilio as audio output interrupt the specialist of they're currently speaking
+        if conversation_segment.output_audio_channel == ConversationOutputChannelType.TWILIO:
+            interrupt_specialist_audio(conversation_segment.call_id)
 
         # Call AutoGen to generate specialist response text
         conversation_segment.specialist_text = await self.agentic_service.process_async(conversation_segment.customer_text)
 
         # If just publishing to console do so now and return without generating output audio
-        if conversation_segment.output_audio_channel.CONSOLE:
+        if conversation_segment.output_audio_channel == ConversationOutputChannelType.CONSOLE:
             self.console_output_channel.publish_audio(conversation_segment)
             return
 

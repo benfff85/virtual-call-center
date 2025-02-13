@@ -49,3 +49,23 @@ def publish_audio_to_call(call_sid: str, audio_file_location: str):
     except Exception as e:
         logger.info("Error updating call: %s", str(e))
         return False
+
+def interrupt_specialist_audio(call_sid: str):
+    """Send twiml to twilio to stop the ongoing specialist audio"""
+    client = Client(os.environ['TWILIO_ACCOUNT_SID'],
+                    os.environ['TWILIO_AUTH_TOKEN'])
+
+    # Create TwiML with <Play> command
+    twiml = VoiceResponse()
+    twiml.redirect(url=f"https://{os.environ['NGROK_DOMAIN']}/call-keepalive", method="POST")
+
+    try:
+        # Update the live call with new TwiML instructions
+        call = client.calls(call_sid).update(
+            twiml=twiml.to_xml()
+        )
+        logger.info(f"Sending interrupt to call {call.sid}", )
+        return True
+    except Exception as e:
+        logger.info("Error updating call: %s", str(e))
+        return False
