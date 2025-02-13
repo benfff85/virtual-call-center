@@ -15,4 +15,5 @@ sounddevice~=0.5.1
 pydantic~=2.10.6
 torch~=2.6.0
 soundfile~=0.13.1
-kokoro~=0.7.13
+kokoro~=0.7.15
+starlette~=0.45.3
