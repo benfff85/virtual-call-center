@@ -1,11 +1,11 @@
-twilio~=9.4.4
+twilio~=9.4.5
 python-dotenv~=1.0.1
 vosk~=0.3.44
 uvicorn[standard]~=0.34.0
 python-multipart~=0.0.20
 
 # Autogen
-autogen-agentchat~=0.4.6
+autogen-agentchat~=0.4.7
 autogen-ext[openai,web-surfer]
 
 fastapi~=0.115.8
@@ -15,5 +15,5 @@ sounddevice~=0.5.1
 pydantic~=2.10.6
 torch~=2.6.0
 soundfile~=0.13.1
-kokoro~=0.7.15
+kokoro~=0.7.16
 starlette~=0.45.3
