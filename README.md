@@ -61,3 +61,18 @@ curl -X POST https://api.twilio.com/2010-04-01/Accounts/<acct-num>/Calls.json \
   -u <acct-num>:<auth-token>
 ```
 # Misc
+
+# Model Comparison
+
+| Model                       | Response T/s | Tools | Size (GB) |
+|-----------------------------|--------------|-------|-----------|
+| Llama3.2:3b                 | 111          | Yes   | 1.9       |
+| Llama3.1:8b                 | 53           | Yes   | 4.6       |
+| Llama3.3:70b-instruct-q2_K  | 6.5          | Yes   | 24.6      |
+| Phi3:14b                    | 35           | No    | 7.4       |
+| Phi4:14b                    | 27           | No    | 8.4       |
+| Deepseek-r1:1.5b            | 135          | No    | 1         |
+| Deepseek-r1:32b             | 8.6          | No    | 18.5      |
+| Qwen2.5:32b                 | 15           | Yes   | 18.5      |
+| Qwen2.5:32b-instruct-q5_K_M | 10           | Yes   | 21.7      |
+| Qwen2.5:32b-instruct-q6_K   | 10           | Yes   | 25        |
