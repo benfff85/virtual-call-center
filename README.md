@@ -76,3 +76,5 @@ curl -X POST https://api.twilio.com/2010-04-01/Accounts/<acct-num>/Calls.json \
 | Qwen2.5:32b                 | 15           | Yes   | 18.5      |
 | Qwen2.5:32b-instruct-q5_K_M | 10           | Yes   | 21.7      |
 | Qwen2.5:32b-instruct-q6_K   | 10           | Yes   | 25        |
+| Qwen2.5:14b                 | 32           | Yes   | 8.4       |
+| Qwen2.5:7b                  | 53           | Yes   | 4.4       |
