@@ -52,7 +52,7 @@ class ConversationSegmentProcessorService:
             interrupt_specialist_audio(conversation_segment.call_id)
 
         # Call AutoGen to generate specialist response text
-        conversation_segment.specialist_text = await self.agentic_service.process_async(conversation_segment.customer_text)
+        conversation_segment.specialist_text = await self.agentic_service.process_async(conversation_segment.customer_text, conversation_segment.call_id)
 
         # If just publishing to console do so now and return without generating output audio
         if conversation_segment.output_audio_channel == ConversationOutputChannelType.CONSOLE:
