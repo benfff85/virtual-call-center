@@ -10,5 +10,5 @@ class AgentCallMetadata(BaseModel):
     call_classification: str = None
     required_auth_level: str = None
     current_auth_level: str = None
-    card_number: str = "1111222233334444"
-    customer_address: str = "708 Willington Square Way, Newark DE 19711"
+    card_number: str = None
+    customer_address: str = None
