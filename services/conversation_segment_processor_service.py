@@ -4,7 +4,7 @@ from typing import Optional
 from clients.twilio_rest_client import interrupt_specialist_audio
 from schemas.conversation_output_channel_type import ConversationOutputChannelType
 from schemas.conversation_segment import ConversationSegment
-from services.agentic_service import AgenticService
+from services.agentic_service_complex_team import AgenticService
 from services.audio_persistence_service import AudioPersistenceService
 from services.conversation_channels.output.console_output_channel_service import ConsoleOutputChannelService
 from services.conversation_channels.output.twilio_output_channel_service import TwilioOutputChannelService
