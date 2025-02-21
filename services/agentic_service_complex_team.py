@@ -1,7 +1,7 @@
 import logging
 import os
 import re
-from typing import Sequence, Dict
+from typing import Sequence, Dict, Any
 
 from autogen_agentchat.agents import AssistantAgent
 from autogen_agentchat.conditions import TextMentionTermination
@@ -24,6 +24,7 @@ class AgenticService:
         )
 
         self.call_metadata: Dict[str, AgentCallMetadata] = {}
+        self.call_state: Dict[str, Any] = {}
 
         self.call_classification_to_risk_level = {
             "General Product/Benefits Inquiry": "None",
@@ -109,7 +110,6 @@ class AgenticService:
             """
         )
 
-        self.state = None
         self.logger.info("Agentic service initialized")
 
 
@@ -156,9 +156,8 @@ class AgenticService:
 
         group_chat = SelectorGroupChat([self.assistant, self.classifier, self.authenticator], termination_condition=TextMentionTermination("TERMINATE"), max_turns=10, model_client=self.openai_model_client, selector_func=selector_func)
 
-        # TODO Make state call-id specific
-        if self.state is not None:
-            await group_chat.load_state(self.state)
+        if self.call_state.get(call_id) is not None:
+            await group_chat.load_state(self.call_state[call_id])
 
         # Prefix prompt with call_id: <callId>
         prompt = f"call_id: {call_id} \n\nCustomer Transcript: {prompt}"
@@ -168,7 +167,7 @@ class AgenticService:
         async_result = group_chat.run_stream(task=prompt)
 
         result = await Console(async_result)
-        self.state = await group_chat.save_state()
+        self.call_state[call_id] = await group_chat.save_state()
 
         self.logger.info(f"Processing user prompt complete\n{self.call_metadata[call_id].model_dump_json(indent=2)}")
         self.logger.info("--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------")
