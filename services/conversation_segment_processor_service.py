@@ -4,7 +4,7 @@ from typing import Optional
 from clients.twilio_rest_client import interrupt_specialist_audio
 from schemas.conversation_output_channel_type import ConversationOutputChannelType
 from schemas.conversation_segment import ConversationSegment
-from services.agentic_service import AgenticService
+from services.agentic_service_complex_team import AgenticService
 from services.audio_persistence_service import AudioPersistenceService
 from services.conversation_channels.output.console_output_channel_service import ConsoleOutputChannelService
 from services.conversation_channels.output.twilio_output_channel_service import TwilioOutputChannelService
@@ -52,7 +52,7 @@ class ConversationSegmentProcessorService:
             interrupt_specialist_audio(conversation_segment.call_id)
 
         # Call AutoGen to generate specialist response text
-        conversation_segment.specialist_text = await self.agentic_service.process_async(conversation_segment.customer_text)
+        conversation_segment.specialist_text = await self.agentic_service.process_async(conversation_segment.customer_text, conversation_segment.call_id)
 
         # If just publishing to console do so now and return without generating output audio
         if conversation_segment.output_audio_channel == ConversationOutputChannelType.CONSOLE:
