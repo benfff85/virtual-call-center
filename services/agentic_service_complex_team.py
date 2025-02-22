@@ -1,6 +1,5 @@
 import logging
 import os
-import re
 from typing import Sequence, Dict, Any
 
 from autogen_agentchat.agents import AssistantAgent
@@ -11,6 +10,7 @@ from autogen_agentchat.ui import Console
 from autogen_ext.models.openai import OpenAIChatCompletionClient
 
 from schemas.agent_call_metadata import AgentCallMetadata
+from utilities.llm_message_utils import sanitize_message
 from utilities.logging_utils import configure_logger
 
 
@@ -120,9 +120,12 @@ class AgenticService:
         return self.call_metadata[call_id]
 
     def save_call_classification(self, call_id: str, call_classification: str):
+        if call_classification == "None":
+            return
         self.call_metadata[call_id].call_classification = call_classification
 
     def save_required_auth_level_based_on_classification(self, call_id: str):
+
         self.call_metadata[call_id].required_auth_level = self.call_classification_to_risk_level[self.call_metadata[call_id].call_classification]
 
     def save_call_auth_level(self, call_id: str, call_auth_level: str):
@@ -150,19 +153,31 @@ class AgenticService:
 
             return self.assistant.name
 
-        # Check if key of callId exists in self.call_metadata and if not add an entry
+        # Check if key of callId exists in self.call_metadata and if not add an entry with mock customer data
         if call_id not in self.call_metadata:
-            self.call_metadata[call_id] = AgentCallMetadata(call_id=call_id, card_number="1111222233334444", customer_address="411 Main St, Wilmington, Delaware 19711")
+            self.call_metadata[call_id] = AgentCallMetadata(
+                call_id=call_id,
+                card_number_last_4_digits="4444",
+                customer_address="411 Main St, Wilmington, Delaware 19711"
+            )
 
-        group_chat = SelectorGroupChat([self.assistant, self.classifier, self.authenticator], termination_condition=TextMentionTermination("TERMINATE"), max_turns=10, model_client=self.openai_model_client, selector_func=selector_func)
+        group_chat = SelectorGroupChat(
+            [self.assistant, self.classifier, self.authenticator],
+            termination_condition=TextMentionTermination("TERMINATE"),
+            max_turns=10,
+            model_client=self.openai_model_client,
+            selector_func=selector_func
+        )
 
         if self.call_state.get(call_id) is not None:
             await group_chat.load_state(self.call_state[call_id])
 
-        # Prefix prompt with call_id: <callId>
-        prompt = f"call_id: {call_id} \n\nCustomer Transcript: {prompt}"
+
         self.logger.info("--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------")
         self.logger.info("Processing user prompt")
+
+        # Prefix customer prompt with "call_id: <callId>"
+        prompt = f"call_id: {call_id} \n\nCustomer Transcript: {prompt}"
 
         async_result = group_chat.run_stream(task=prompt)
 
@@ -172,4 +187,6 @@ class AgenticService:
         self.logger.info(f"Processing user prompt complete\n{self.call_metadata[call_id].model_dump_json(indent=2)}")
         self.logger.info("--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------")
 
-        return re.sub(r'[^\x00-\x7F]+', '', result.messages[-1].content).split("TERMINATE")[0]
+        response_text = sanitize_message(result.messages[-1].content.split("TERMINATE")[0])
+
+        return response_text

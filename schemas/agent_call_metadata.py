@@ -10,5 +10,5 @@ class AgentCallMetadata(BaseModel):
     call_classification: str = None
     required_auth_level: str = None
     current_auth_level: str = None
-    card_number: str = None
+    card_number_last_4_digits: str = None
     customer_address: str = None

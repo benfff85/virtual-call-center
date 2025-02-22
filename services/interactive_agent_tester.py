@@ -1,6 +1,7 @@
 import asyncio
 
-from services.agentic_service import AgenticService
+# from services.agentic_service import AgenticService
+from services.agentic_service_complex_team import AgenticService
 
 if __name__ == "__main__":
     import dotenv

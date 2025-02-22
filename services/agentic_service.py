@@ -1,6 +1,5 @@
 import logging
 import os
-import re
 from typing import Dict, Any
 
 from autogen_agentchat.agents import AssistantAgent, UserProxyAgent
@@ -8,6 +7,7 @@ from autogen_agentchat.conditions import MaxMessageTermination
 from autogen_agentchat.teams import RoundRobinGroupChat
 from autogen_ext.models.openai import OpenAIChatCompletionClient
 
+from utilities.llm_message_utils import sanitize_message
 from utilities.logging_utils import configure_logger
 
 
@@ -53,7 +53,10 @@ class AgenticService():
         )
 
         termination = MaxMessageTermination(2)
-        team = RoundRobinGroupChat([assistant], termination_condition=termination)
+        team = RoundRobinGroupChat(
+            [assistant],
+            termination_condition=termination
+        )
 
         if self.call_state.get(call_id) is not None:
             await team.load_state(self.call_state[call_id])
@@ -62,10 +65,7 @@ class AgenticService():
 
         self.call_state[call_id] = await team.save_state()
 
-        response_text = re.sub(r'[^\x00-\x7F]+', '', result.messages[-1].content).strip()
-        response_text = re.sub(r"\*\*.*?\*\*", "", response_text)
-        if "</think>" in response_text:
-            response_text = response_text.split("</think>")[-1].strip()
+        response_text = sanitize_message(result.messages[-1].content)
 
         self.logger.info(f"Processing prompt completed, specialist response generated:\n\n{response_text}\n")
         return response_text
