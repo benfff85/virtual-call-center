@@ -1,3 +1,4 @@
+import asyncio
 import json
 import logging
 import os
@@ -43,7 +44,7 @@ async def answer_call(request: Request):
 @app.post("/call-keepalive")
 async def call_keepalive(request: Request):
     response = VoiceResponse()
-    response.pause(length=30)
+    response.pause(length=300)
     response.redirect(url="/call-keepalive", method="POST")
     return Response(content=str(response), media_type="application/xml")
 
@@ -81,10 +82,10 @@ async def handle_audio_stream(websocket: WebSocket):
                         output_audio_channel=ConversationOutputChannelType.TWILIO
                     )
 
-                    await conversation_segment_processor_service.process_conversation_segment(conversation_segment)
+                    asyncio.create_task(conversation_segment_processor_service.process_conversation_segment(conversation_segment))
 
-                # Close if inactive for 30 seconds
-                if time.time() - last_activity > 30:
+                # Close if inactive for 300 seconds
+                if time.time() - last_activity > 300:
                     logger.info("Closing due to inactivity")
                     break
 
@@ -94,6 +95,7 @@ async def handle_audio_stream(websocket: WebSocket):
 
     except WebSocketDisconnect as e:
         logger.info("WebSocket connection closed")
+
     except Exception as e:
         logger.exception("WebSocket error:")
     finally:
