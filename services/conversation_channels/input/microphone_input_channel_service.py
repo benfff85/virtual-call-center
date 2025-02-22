@@ -79,7 +79,6 @@ class MicrophoneInputChannelService:
                     input_audio_channel=ConversationInputChannelType.LAPTOP_MICROPHONE,
                     customer_audio=AudioData(raw_audio=audio_data, format="ULAW", frequency=8000, channels=1, bit_depth=16),
                     output_audio_channel=ConversationOutputChannelType.CONSOLE
-                    # output_audio_channel=ConversationOutputChannelType.LAPTOP_SPEAKER
                 )
 
                 await self.conversation_segment_processor_service.process_conversation_segment(conversation_segment)
