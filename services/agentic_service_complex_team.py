@@ -69,8 +69,8 @@ class AgenticService:
             """
         )
 
-        self.authenticator = AssistantAgent(
-            name="authenticator",
+        self.low_risk_authenticator = AssistantAgent(
+            name="low_risk_authenticator",
             model_client=self.openai_model_client,
             tools=[self.get_call_metadata, self.save_call_auth_level],
             system_message=
@@ -78,16 +78,34 @@ class AgenticService:
             You are are working in a call center for JPMorganChase and responsible for authenticating customers.
             Always respond as if speaking directly to the customer.
             ALWAYS fetch call metadata via the "get_call_metadata" tool after the customer has spoken and identify the "required_auth_level", ALWAYS DO THIS as values may change mid conversation.
-            The customer has not yet authenticated for the appropriate auth level, authenticate them based on the rules below.
+            The customer has not yet authenticated for the appropriate auth level
             
-            Authentication Rules:
-            1. For "Low" "required_auth_level" - have the customer provide the last 4 digits of their card number, these must match the last 4 digits of the card on file (found in call metadata). Do not reveal the expected value to the customer, just say sorry those don't match what we have on file.
-            2. For "High" "required_auth_level" - have the customer provide their home address, this must match what is on file (found in call metadata) for the customer for the street address, city, state and zip code. Do not reveal the expected value to the customer, just say sorry that doesn't match what we have on file.
+            Authenticate them by having the customer provide the last 4 digits of their card number, these must match the last 4 digits of the card on file (found in call metadata). Do not reveal the expected value to the customer, just say sorry those don't match what we have on file.
+                        
+            Suffix all messages TO THE CUSTOMER with "TERMINATE".
+            Do not worry about addressing the customers request or the ability to do so, focus only on AUTHENTICATING the customer based on the rules above.
+            Only once the customer has provided the necessary information correctly to authenticate successfully save their new authentication level as "Low" and reply with only the word "AUTHENTICATED".
+            Do not reply with "AUTHENTICATED" until appropriate information has been received from the customer. 
+            Do not include any additional commentary if replying with "AUTHENTICATED".
+            """
+        )
+
+        self.high_risk_authenticator = AssistantAgent(
+            name="high_risk_authenticator",
+            model_client=self.openai_model_client,
+            tools=[self.get_call_metadata, self.save_call_auth_level],
+            system_message=
+            """
+            You are are working in a call center for JPMorganChase and responsible for authenticating customers.
+            Always respond as if speaking directly to the customer.
+            ALWAYS fetch call metadata via the "get_call_metadata" tool after the customer has spoken and identify the "required_auth_level", ALWAYS DO THIS as values may change mid conversation.
+            The customer has not yet authenticated for the appropriate auth level
+            
+            Authenticate them by having the customer provide their home address, this must match what is on file (found in call metadata) for the customer for the street address, city, state and zip code. Do not reveal the expected value to the customer, just say sorry that doesn't match what we have on file.
             
             Suffix all messages TO THE CUSTOMER with "TERMINATE".
             Do not worry about addressing the customers request or the ability to do so, focus only on AUTHENTICATING the customer based on the rules above.
-
-            Only once the customer has provided the necessary information correctly to authenticate successfully save their new authentication level and reply with only the word "AUTHENTICATED".
+            Only once the customer has provided the necessary information correctly to authenticate successfully save their new authentication level as "High" and reply with only the word "AUTHENTICATED".
             Do not reply with "AUTHENTICATED" until appropriate information has been received from the customer. 
             Do not include any additional commentary if replying with "AUTHENTICATED".
             """
@@ -148,8 +166,11 @@ class AgenticService:
             # Enrich metadata with required auth level based on call classification
             self.save_required_auth_level_based_on_classification(call_id)
 
-            if (call_metadata.required_auth_level == "High" and call_metadata.current_auth_level != "High") or (call_metadata.required_auth_level == "Low" and call_metadata.current_auth_level is None):
-                return self.authenticator.name
+            if call_metadata.required_auth_level == "Low" and call_metadata.current_auth_level is None:
+                return self.low_risk_authenticator.name
+
+            if call_metadata.required_auth_level == "High" and call_metadata.current_auth_level != "High":
+                return self.high_risk_authenticator.name
 
             return self.assistant.name
 
@@ -162,7 +183,7 @@ class AgenticService:
             )
 
         group_chat = SelectorGroupChat(
-            [self.assistant, self.classifier, self.authenticator],
+            [self.classifier, self.low_risk_authenticator, self.high_risk_authenticator, self.assistant],
             termination_condition=TextMentionTermination("TERMINATE"),
             max_turns=10,
             model_client=self.openai_model_client,
