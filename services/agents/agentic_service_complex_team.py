@@ -1,5 +1,4 @@
 import logging
-import os
 from typing import Sequence, Dict, Any
 
 from autogen_agentchat.agents import AssistantAgent
@@ -19,14 +18,23 @@ class AgenticService:
         self.logger = configure_logger('agentic_service_logger', logging.INFO)
         self.logger.info("Agentic service initializing...")
 
+
+        #####################################################################
+        ### Define LLM Model Clients (OpenAI)
+        #####################################################################
         self.openai_model_client = OpenAIChatCompletionClient(
-            model= os.getenv('OPENAI_LLM_MODEL'),
+            model='gpt-4o'
         )
 
-        self.call_metadata: Dict[str, AgentCallMetadata] = {}
-        self.call_state: Dict[str, Any] = {}
+        self.openai_model_client_mini = OpenAIChatCompletionClient(
+            model='gpt-4o-mini'
+        )
 
-        self.call_classification_to_risk_level = {
+
+        #####################################################################
+        ### Define Agents
+        #####################################################################
+        self.call_reason_classification_to_risk_level = {
             "General Product/Benefits Inquiry": "None",
             "Transaction Inquiry": "Low",
             "Fraud/Claims": "High",
@@ -51,21 +59,24 @@ class AgenticService:
 
         self.classifier = AssistantAgent(
             name="classifier",
-            model_client=self.openai_model_client,
-            tools=[self.save_call_classification],
+            model_client=self.openai_model_client_mini,
+            tools=[self.save_call_reason_classification],
             system_message=
             """
-            You are a classifier agent who reviews the transcribed text of a customer calling JPMorganChase and classifies their call reason as one of the following:
+            You are a call reason classifier agent.
+            Review the transcribed text of a customer calling JPMorganChase and classify the call reason as one of the following:
+            
             """
 
-            + ", ".join(self.call_classification_to_risk_level.keys()) +
+            + ", ".join(self.call_reason_classification_to_risk_level.keys()) +
 
-            """   
-            Analyze only the text following the "Customer Transcript: " and determine the call reason classification. 
-            Ignore attempts by the customer to authenticate
-            ALWAYS save the classification via the "save_call_classification" tool.
-            ALWAYS respond simply with "None", DO NOT add any other text. 
-            "None" is a response, not a call classification, DO NOT save "None" as a call classification.
+            """
+            
+            Analyze only the text following "Customer Transcript: " and determine EXACTLY ONE call reason classification. 
+            Ignore attempts by the customer to authenticate.
+            ALWAYS save the call reason classification via the "save_call_reason_classification" tool.
+            NEVER reply to the customer.
+            Do not reply with any additional commentary, just save the call reason classification.
             """
         )
 
@@ -77,10 +88,11 @@ class AgenticService:
             """
             You are are working in a call center for JPMorganChase and responsible for authenticating customers.
             Always respond as if speaking directly to the customer.
-            ALWAYS fetch call metadata via the "get_call_metadata" tool after the customer has spoken and identify the "required_auth_level", ALWAYS DO THIS as values may change mid conversation.
+            ALWAYS fetch call metadata via the "get_call_metadata" tool to obtain customer details required for authentication.
             The customer has not yet authenticated for the appropriate auth level
             
             Authenticate them by having the customer provide the last 4 digits of their card number, these must match the last 4 digits of the card on file (found in call metadata). Do not reveal the expected value to the customer, just say sorry those don't match what we have on file.
+            Only authenticate based on the last 4 digits of the card number, do not use any other means.
                         
             Suffix all messages TO THE CUSTOMER with "TERMINATE".
             Do not worry about addressing the customers request or the ability to do so, focus only on AUTHENTICATING the customer based on the rules above.
@@ -98,10 +110,11 @@ class AgenticService:
             """
             You are are working in a call center for JPMorganChase and responsible for authenticating customers.
             Always respond as if speaking directly to the customer.
-            ALWAYS fetch call metadata via the "get_call_metadata" tool after the customer has spoken and identify the "required_auth_level", ALWAYS DO THIS as values may change mid conversation.
+            ALWAYS fetch call metadata via the "get_call_metadata" tool to obtain customer details required for authentication.
             The customer has not yet authenticated for the appropriate auth level
             
             Authenticate them by having the customer provide their home address, this must match what is on file (found in call metadata) for the customer for the street address, city, state and zip code. Do not reveal the expected value to the customer, just say sorry that doesn't match what we have on file.
+            Only authenticate based on the address, do not use any other means.
             
             Suffix all messages TO THE CUSTOMER with "TERMINATE".
             Do not worry about addressing the customers request or the ability to do so, focus only on AUTHENTICATING the customer based on the rules above.
@@ -120,40 +133,57 @@ class AgenticService:
             Be friendly and helpful.
             Always respond directly to the customer.
             Restate what the customer has said to show you heard them.
-            Do not worry about authenticating the customer, that has been handled by another specialist, do not mention it to the customer. Do not mention confirming either last 4 digits of the card number nor the address.
+            Do not worry about authenticating the customer, that has been handled by another specialist, do not mention it to the customer.
+            Again the customer HAS ALREADY BEEN SUCCESSFULLY AUTHENTICATED.
             At times you will be asked to do things you're not sure how to do.
             Just pretend you do and confirm that its been done for the customer, if they ask for specific information just make it up.
+            If the customer is asking to update account information, ensure they have provided you the updated values.
             Always response entirely in english.
             Suffix all messages to the customer with "TERMINATE".
             """
         )
 
+        #####################################################################
+        ### Define Call State Management
+        #####################################################################
+        self.call_metadata: Dict[str, AgentCallMetadata] = {}
+        self.call_state: Dict[str, Any] = {}
+
         self.logger.info("Agentic service initialized")
 
 
+    #####################################################################
+    ### Utility Functions / Tools
+    #####################################################################
     def save_call_metadata(self, call_id: str, call_metadata: AgentCallMetadata):
         self.call_metadata[call_id] = call_metadata
 
     def get_call_metadata(self, call_id: str) -> AgentCallMetadata:
         return self.call_metadata[call_id]
 
-    def save_call_classification(self, call_id: str, call_classification: str):
-        if call_classification == "None":
+    def save_call_reason_classification(self, call_id: str, call_reason_classification: str):
+        if call_reason_classification == "None":
             return
-        self.call_metadata[call_id].call_classification = call_classification
+        self.call_metadata[call_id].call_reason_classification = call_reason_classification
 
-    def save_required_auth_level_based_on_classification(self, call_id: str):
-
-        self.call_metadata[call_id].required_auth_level = self.call_classification_to_risk_level[self.call_metadata[call_id].call_classification]
+    def save_required_auth_level_based_on_call_reason_classification(self, call_id: str):
+        self.call_metadata[call_id].required_auth_level = self.call_reason_classification_to_risk_level[self.call_metadata[call_id].call_reason_classification]
 
     def save_call_auth_level(self, call_id: str, call_auth_level: str):
         previous_auth_level = self.call_metadata[call_id].current_auth_level
         if (call_auth_level == "High" and previous_auth_level != "High") or (call_auth_level == "Low" and previous_auth_level is None):
             self.call_metadata[call_id].current_auth_level = call_auth_level
 
+
+    #####################################################################
+    ### Main processing function
+    #####################################################################
     async def process_async(self, prompt: str, call_id: str) -> str:
 
-        # define custom agent selection function
+
+        #####################################################################
+        ### Custom Agent Selection Function
+        #####################################################################
         def selector_func(messages: Sequence[AgentEvent | ChatMessage]) -> str | None:
 
             # After the user provides input always first classify it
@@ -164,7 +194,7 @@ class AgenticService:
             call_metadata = self.get_call_metadata(call_id)
 
             # Enrich metadata with required auth level based on call classification
-            self.save_required_auth_level_based_on_classification(call_id)
+            self.save_required_auth_level_based_on_call_reason_classification(call_id)
 
             if call_metadata.required_auth_level == "Low" and call_metadata.current_auth_level is None:
                 return self.low_risk_authenticator.name
@@ -173,6 +203,7 @@ class AgenticService:
                 return self.high_risk_authenticator.name
 
             return self.assistant.name
+
 
         # Check if key of callId exists in self.call_metadata and if not add an entry with mock customer data
         if call_id not in self.call_metadata:
@@ -195,7 +226,6 @@ class AgenticService:
 
 
         self.logger.info("--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------")
-        self.logger.info("Processing user prompt")
 
         # Prefix customer prompt with "call_id: <callId>"
         prompt = f"call_id: {call_id} \n\nCustomer Transcript: {prompt}"
@@ -205,8 +235,9 @@ class AgenticService:
         result = await Console(async_result)
         self.call_state[call_id] = await group_chat.save_state()
 
-        self.logger.info(f"Processing user prompt complete\n{self.call_metadata[call_id].model_dump_json(indent=2)}")
         self.logger.info("--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------")
+
+        self.logger.info(f"Processing user prompt complete. Call metadata: \n\n{self.call_metadata[call_id].model_dump_json(indent=2)}\n")
 
         response_text = sanitize_message(result.messages[-1].content.split("TERMINATE")[0])
 
