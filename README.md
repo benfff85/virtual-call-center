@@ -3,9 +3,9 @@
 ## Conda
 
 ```bash
-conda create --name auto-gen-demo python=3.12
+conda create --name virtual-call-center python=3.12
 conda env list
-conda activate auto-gen-demo
+conda activate virtual-call-center
 ```
 
 ## Install Python Dependencies
