@@ -139,7 +139,7 @@ class AgenticService:
             Just pretend you do and confirm that its been done for the customer, if they ask for specific information just make it up.
             If the customer is asking to update account information, ensure they have provided you the updated values.
             Always response entirely in english.
-            Suffix all messages to the customer with "TERMINATE".
+            Suffix your message to the customer with the word "TERMINATE".
             """
         )
 
